@@ -6,10 +6,10 @@ var Article = new mongoose.Schema({
   short_description: String,
   long_description: String,
   author: String,
-  created_at: Date,
+  created_at: { type : Date, default: Date.now },
   category_id: String
 });
-var Categpru = new mongoose.Schema({
+var Category = new mongoose.Schema({
   name: String,
   description: String
 });

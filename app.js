@@ -9,9 +9,11 @@ var passport = require('passport');
 var flash = require('connect-flash');
 var session = require('express-session');
 require('./models/users');
+require('./models/articles');
 var authenticate = require('./routes/authenticate')(passport);
 var authService = require('./routes/auth-service');
 var users = require('./routes/users');
+var articles = require('./routes/articles');
 
 //var makeCall = celebrity.makeCall;
 //initialize mongoose schemas
@@ -56,6 +58,7 @@ app.use(flash());
 
 app.use('/authenticate',authenticate);
 app.use('/users',users);
+app.use('/articles',articles);
 //celebrity
 
 //console.log(makeCall);
