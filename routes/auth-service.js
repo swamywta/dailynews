@@ -24,47 +24,123 @@ module.exports = function(passport){
 
     // passport config
 //  passport.use(new LocalStrategy(user.authenticate()));
-    passport.use('user_login', new LocalStrategy({
-            usernameField : 'username',
-            passwordField : 'password',
-            passReqToCallback : true
-        },
-        function(req, username, password, done) {
-
-            try{
-                // check in mongo if a user with username exists or not
-                User.findOne({ 'username' :  username},
-                    function(err, user) {
-                        // In case of any error, return using the done method
-                        if (err){
-                            return done(err+"Error data");
-                        }
-                        // Username does not exist, log the error and redirect back
-                        if (!user){
-                            return done(null, false, { message: 'User Not Found with username' });
-                        }
-                        // User exists but wrong password, log the error
-                        if (!isValidPassword(user, password)){
-                            return done(null, false, { message: 'Invalid UserName Or Password' });
-                        }
-                        // User and password both match, return user from done method
-                        // which will be treated like success
-                        return done(null, user);
-                    }
-                );
+passport.use('user-login', new LocalStrategy({
+  usernameField : 'user_mail',
+  passwordField : 'user_pass',
+        passReqToCallback : true
+    },
+    function(req, username, password, done) {
+      console.log("Test");
+        try{
+            var login_type =  req.body.login_type;
+            if(login_type == undefined){
+              return done("err", "Please specify login type");
             }
-            catch(err){
-                res.send({
-                    state:"error",
-                    message:err
-                });
+            // check in mongo if a user with username exists or not
+            if(login_type == "facebook"){
+              userAuth.findOne({$or:[{'facebook_id': req.body.facebook_id}, {'user_mail': req.body.user_mail}]}, function(err, user) {
+                if(err){
+                  return done(err+"Error data");
+                }
+                else if(!user){
+                  var user = new userAuth();
+                  user.user_mail = req.body.user_mail;
+                  user.facebook_id = req.body.facebook_id;
+                  user.user_name = req.body.user_name;
+                  user.profile_pic = req.body.profile_pic;
+                  user.device_token = req.body.device_token;
+                  user.platform = req.body.platform;
+                  user.user_type = "facebook";
+                  user.save(function(err,user){
+                      return done(null, user);
+                  })
+                }
+                else {
+                  user.device_token = req.body.device_token;
+                  user.platform = req.body.platform;
+                  user.first_time_login = false;
+                  user.save(function(err, user){
+                if(!err){
+                   console.log("success of updating device token and ");
+                }
+
+              })
+                  return done(null, user);
+                }
+              })
+
+            }
+            if(login_type == "google"){
+              userAuth.findOne({$or:[{'google_id': req.body.google_id}, {'user_mail': req.body.facebook_mail}]}, function(err, user) {
+                if(err){
+                  return done(err+"Error data");
+                }
+                else if(!user){
+                  var user = new userAuth();
+                  user.user_mail = req.body.user_mail;
+                  user.google_id = req.body.google_id;
+                  user.user_name = req.body.user_name;
+                  user.profile_pic = req.body.profile_pic;
+                  user.device_token = req.body.device_token;
+                  user.platform = req.body.platform;
+                  user.user_type = "google";
+                  user.save(function(err,user){
+                      return done(null, user);
+                  })
+                }
+                else {
+                  user.device_token = req.body.device_token;
+                  user.platform = req.body.platform;
+                  user.first_time_login = false;
+                  user.save(function(err, user){
+                    if(!err){
+                       console.log("success of updating device token and ");
+                    }
+                  })
+                  return done(null, user);
+                }
+              })
+            }
+            if(login_type == "normal"){
+              userAuth.findOne({ 'user_mail' :  username},
+                  function(err, user) {
+                      // In case of any error, return using the done method
+                      if (err){
+                          return done(err+"Error data");
+                      }
+                      // Username does not exist, log the error and redirect back
+                      if (!user){
+                          return done(null, false, { message: 'User Not Found with username' });
+                      }
+                      // User exists but wrong password, log the error
+                      if (!isValidPassword(user, password)){
+                          return done(null, false, { message: 'Invalid UserName Or Password' });
+                      }
+                      user.device_token = req.body.device_token;
+                      user.platform = req.body.platform;
+                      user.first_time_login = false;
+                      user.save(function(err, user){
+                    if(!err){
+                       console.log("success of updating device token and ");
+                    }
+
+                  });
+                      return done(null, user);
+                  })
             }
         }
-    ));
+        catch(err){
+            res.send({
+                state:"error",
+                message:err
+            });
+        }
+    }
+));
 
     passport.use('user_register', new LocalStrategy({
-            usernameField : 'username',
-            passwordField : 'password',
+            usernameField : 'user_mail',
+            passwordField : 'user_pass',
             passReqToCallback : true // allows us to pass back the entire request to the callback
         },
 
@@ -73,7 +149,7 @@ module.exports = function(passport){
             //var email = req.body.user_mail;
             // find a user in mongo with provided username
             try{
-                User.findOne({ 'username':username }, function(err, user) {
+                User.findOne({ 'user_mail':user_mail }, function(err, user) {
                     // In case of any error, return using the done method
                     if (err){
                         return done(err, { message: 'Error in SignUp' });
@@ -88,8 +164,8 @@ module.exports = function(passport){
                         // if(req.body.user_mail=="admin@carz.com"){
                         //     franchisor.user_role = req.body;
                         // }
-                        user.username = username;
-                        user.password = createHash(password);
+                        user.user_mail = username;
+                        user.user_mail = createHash(password);
 
                         user.save(function(err,user){
                             return done(null, user);
